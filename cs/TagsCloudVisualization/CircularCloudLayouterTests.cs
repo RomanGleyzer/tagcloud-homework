@@ -1,5 +1,4 @@
 ﻿using FluentAssertions;
-using FluentAssertions.Execution;
 using System.Drawing;
 
 namespace TagsCloudVisualization;
@@ -22,17 +21,45 @@ public class CircularCloudLayouterTests
     }
 
     [Test]
-    public void PutNextRectangle_FirstCall_ShouldBeInCenter()
+    public void PutNextRectangle_OneRectangle_ShouldBeInCenter()
     {
         var rectangle = _layouter.PutNextRectangle(_rectangleSize);
 
-        using (new AssertionScope())
-        {
-            var expectedLeft = _center.X - _rectangleSize.Width / 2;
-            var expectedTop = _center.Y - _rectangleSize.Height / 2;
+        var centerX = rectangle.Left + rectangle.Width / 2;
+        var centerY = rectangle.Top + rectangle.Height / 2;
+        var rectCenter = new Point(centerX, centerY);
 
-            rectangle.Left.Should().Be(expectedLeft);
-            rectangle.Top.Should().Be(expectedTop);
+        rectCenter.Should().Be(_center);
+    }
+
+    [Test]
+    public void PutNextRectangle_ManyRectanglesWithDifferentSizes_ShouldNotIntersect()
+    {
+        const int rectanglesLimit = 200;
+        const int randomMinValue = 10;
+        const int randomMaxValue = 100;
+        
+        var random = new Random(0);
+        var rectangles = new Rectangle[rectanglesLimit];
+
+        for (int i = 0; i < rectanglesLimit; i++)
+        {
+            var width = random.Next(randomMinValue, randomMaxValue);
+            var height = random.Next(randomMinValue, randomMaxValue);
+            var size = new Size(width, height);
+
+            var rectangle = _layouter.PutNextRectangle(size);
+            rectangles[i] = rectangle;
         }
+
+        var rectanglesCount = rectangles.Length;
+        for (int i = 0; i < rectanglesCount; i++)
+            for (int j = i + 1; j < rectanglesCount; j++)
+            {
+                var r1 = rectangles[i];
+                var r2 = rectangles[j];
+
+                r1.IntersectsWith(r2).Should().BeFalse();
+            }
     }
 }
