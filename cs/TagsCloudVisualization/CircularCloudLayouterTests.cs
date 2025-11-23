@@ -62,4 +62,11 @@ public class CircularCloudLayouterTests
                 r1.IntersectsWith(r2).Should().BeFalse();
             }
     }
+
+    // Прямоугольники должны лежать как можно плотнее друг к другу
+    [Test]
+    public void Layout_ManyRectangles_ShouldBeDense()
+    {
+
+    }
 }
