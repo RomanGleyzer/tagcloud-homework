@@ -4,8 +4,8 @@ namespace TagsCloudVisualization;
 
 public class CircularCloudLayouter(Point center)
 {
-    private const double SpiralStep = 0.5;
-    private const int ExpansionRate = 5;
+    private const double SpiralStep = 0.2;
+    private const int ExpansionRate = 2;
 
     private readonly List<Rectangle> _createdRectangles = [];
 
@@ -13,7 +13,7 @@ public class CircularCloudLayouter(Point center)
     {
         if (_createdRectangles.Count == 0)
         {
-            var startRectangle = CreateRectangle(size: rectangleSize, x: center.X, y: center.Y, useRounding: false);
+            var startRectangle = CreateRectangle(rectangleSize, center.X, center.Y);
 
             _createdRectangles.Add(startRectangle);
             return startRectangle;
@@ -28,30 +28,42 @@ public class CircularCloudLayouter(Point center)
             var candidateX = (int)(center.X + spiralRadius * Math.Cos(_currentSpiralStep));
             var candidateY = (int)(center.Y + spiralRadius * Math.Sin(_currentSpiralStep));
 
-            var candidate = CreateRectangle(size: rectangleSize, x: candidateX, y: candidateY, useRounding: true);
+            var candidate = CreateRectangle(rectangleSize, candidateX, candidateY);
+            if (_createdRectangles.Any(candidate.IntersectsWith))
+                continue;
 
-            if (!_createdRectangles.Any(candidate.IntersectsWith))
+            var currentRectangle = candidate;
+            while (true)
             {
-                _createdRectangles.Add(candidate);
-                return candidate;
+                var centerX = currentRectangle.X + currentRectangle.Width / 2;
+                var centerY = currentRectangle.Y + currentRectangle.Height / 2;
+
+                var stepX = Math.Sign(center.X - centerX);
+                var stepY = Math.Sign(center.Y - centerY);
+
+                if (stepX == 0 && stepY == 0)
+                    break;
+
+                var movedCenterX = centerX + stepX;
+                var movedCenterY = centerY + stepY;
+
+                var moved = CreateRectangle(rectangleSize, movedCenterX, movedCenterY);
+
+                if (_createdRectangles.Any(moved.IntersectsWith))
+                    break;
+
+                currentRectangle = moved;
             }
+
+            _createdRectangles.Add(currentRectangle);
+            return currentRectangle;
         }
     }
 
-    private static Rectangle CreateRectangle(Size size, int x, int y, bool useRounding)
+    private static Rectangle CreateRectangle(Size size, int centerX, int centerY)
     {
-        int left, top;
-        if (useRounding)
-        {
-            left = (int)Math.Round(x - size.Width / 2.0);
-            top = (int)Math.Round(y - size.Height / 2.0);
-        }
-        else
-        {
-            left = x - size.Width / 2;
-            top = y - size.Height / 2;
-        }
-
+        var left = centerX - size.Width / 2;
+        var top = centerY - size.Height / 2;
         return new Rectangle(left, top, size.Width, size.Height);
     }
 }

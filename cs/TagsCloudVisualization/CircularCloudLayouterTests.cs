@@ -7,10 +7,15 @@ public class CircularCloudLayouterTests
 {
     private const int Width = 20;
     private const int Height = 10;
+    private const int CreatedRectanglesLimit = 200;
+    private const int RandomMinValue = 10;
+    private const int RandomMaxValue = 100;
+    private const double ExpectedMinDensity = 0.5;
 
     private Point _center;
     private Size _rectangleSize;
     private CircularCloudLayouter _layouter;
+    private Rectangle[] _rectangles = null!;
 
     [SetUp]
     public void Setup()
@@ -35,29 +40,25 @@ public class CircularCloudLayouterTests
     [Test]
     public void PutNextRectangle_ManyRectanglesWithDifferentSizes_ShouldNotIntersect()
     {
-        const int rectanglesLimit = 200;
-        const int randomMinValue = 10;
-        const int randomMaxValue = 100;
-        
         var random = new Random(0);
-        var rectangles = new Rectangle[rectanglesLimit];
+        _rectangles = new Rectangle[CreatedRectanglesLimit];
 
-        for (int i = 0; i < rectanglesLimit; i++)
+        for (int i = 0; i < CreatedRectanglesLimit; i++)
         {
-            var width = random.Next(randomMinValue, randomMaxValue);
-            var height = random.Next(randomMinValue, randomMaxValue);
+            var width = random.Next(RandomMinValue, RandomMaxValue);
+            var height = random.Next(RandomMinValue, RandomMaxValue);
             var size = new Size(width, height);
 
             var rectangle = _layouter.PutNextRectangle(size);
-            rectangles[i] = rectangle;
+            _rectangles[i] = rectangle;
         }
 
-        var rectanglesCount = rectangles.Length;
+        var rectanglesCount = _rectangles.Length;
         for (int i = 0; i < rectanglesCount; i++)
             for (int j = i + 1; j < rectanglesCount; j++)
             {
-                var r1 = rectangles[i];
-                var r2 = rectangles[j];
+                var r1 = _rectangles[i];
+                var r2 = _rectangles[j];
 
                 r1.IntersectsWith(r2).Should().BeFalse();
             }
@@ -65,8 +66,33 @@ public class CircularCloudLayouterTests
 
     // Прямоугольники должны лежать как можно плотнее друг к другу
     [Test]
-    public void Layout_ManyRectangles_ShouldBeDense()
+    public void PutNextRectangle_ManyRectanglesWithDifferentSizes_ShouldBeDense()
     {
+        var random = new Random(0);
+        _rectangles = new Rectangle[CreatedRectanglesLimit];
 
+        for (int i = 0; i < CreatedRectanglesLimit; i++)
+        {
+            var width = random.Next(RandomMinValue, RandomMaxValue);
+            var height = random.Next(RandomMinValue, RandomMaxValue);
+            var size = new Size(width, height);
+
+            var rectangle = _layouter.PutNextRectangle(size);
+            _rectangles[i] = rectangle;
+        }
+
+        var minX = _rectangles.Min(rect => rect.Left);
+        var maxX = _rectangles.Max(rect => rect.Right);
+        var minY = _rectangles.Min(rect => rect.Top);
+        var maxY = _rectangles.Max(rect => rect.Bottom);
+
+        var boundingWidth = maxX - minX;
+        var boundingHeight = maxY - minY;
+        var boudingArea = boundingWidth * boundingHeight;
+
+        var totalArea = _rectangles.Sum(rect => rect.Width * rect.Height);
+        var density = (double)totalArea / boudingArea;
+
+        density.Should().BeGreaterThan(ExpectedMinDensity);
     }
 }
