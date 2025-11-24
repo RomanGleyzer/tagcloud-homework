@@ -13,10 +13,9 @@ public class CircularCloudLayouter(Point center)
     {
         if (_createdRectangles.Count == 0)
         {
-            var startRectangle = CreateRectangle(rectangleSize, center.X, center.Y);
-
-            _createdRectangles.Add(startRectangle);
-            return startRectangle;
+            var rectangle = CreateRectangle(rectangleSize, center.X, center.Y);
+            _createdRectangles.Add(rectangle);
+            return rectangle;
         }
 
         var _currentSpiralStep = 0.0;
@@ -24,40 +23,52 @@ public class CircularCloudLayouter(Point center)
         {
             _currentSpiralStep += SpiralStep;
 
-            var spiralRadius = ExpansionRate * _currentSpiralStep;
-            var candidateX = (int)(center.X + spiralRadius * Math.Cos(_currentSpiralStep));
-            var candidateY = (int)(center.Y + spiralRadius * Math.Sin(_currentSpiralStep));
-
-            var candidate = CreateRectangle(rectangleSize, candidateX, candidateY);
+            var candidate = CreateCandidate(center, rectangleSize, _currentSpiralStep);
             if (_createdRectangles.Any(candidate.IntersectsWith))
                 continue;
 
-            var currentRectangle = candidate;
-            while (true)
-            {
-                var centerX = currentRectangle.X + currentRectangle.Width / 2;
-                var centerY = currentRectangle.Y + currentRectangle.Height / 2;
-
-                var stepX = Math.Sign(center.X - centerX);
-                var stepY = Math.Sign(center.Y - centerY);
-
-                if (stepX == 0 && stepY == 0)
-                    break;
-
-                var movedCenterX = centerX + stepX;
-                var movedCenterY = centerY + stepY;
-
-                var moved = CreateRectangle(rectangleSize, movedCenterX, movedCenterY);
-
-                if (_createdRectangles.Any(moved.IntersectsWith))
-                    break;
-
-                currentRectangle = moved;
-            }
+            var currentRectangle = HandleCandidateMovingToCenter(rectangleSize, candidate);
 
             _createdRectangles.Add(currentRectangle);
             return currentRectangle;
         }
+    }
+
+    private static Rectangle CreateCandidate(Point center, Size size, double currentSpiralStep)
+    {
+        var spiralRadius = ExpansionRate * currentSpiralStep;
+        var candidateX = (int)(center.X + spiralRadius * Math.Cos(currentSpiralStep));
+        var candidateY = (int)(center.Y + spiralRadius * Math.Sin(currentSpiralStep));
+
+        return CreateRectangle(size, candidateX, candidateY);
+    }
+
+    private Rectangle HandleCandidateMovingToCenter(Size size, Rectangle candidate)
+    {
+        var current = candidate;
+        while (true)
+        {
+            var centerX = current.X + current.Width / 2;
+            var centerY = current.Y + current.Height / 2;
+
+            var stepX = Math.Sign(center.X - centerX);
+            var stepY = Math.Sign(center.Y - centerY);
+
+            if (stepX == 0 && stepY == 0)
+                break;
+
+            var movedCenterX = centerX + stepX;
+            var movedCenterY = centerY + stepY;
+
+            var moved = CreateRectangle(size, movedCenterX, movedCenterY);
+
+            if (_createdRectangles.Any(moved.IntersectsWith))
+                break;
+
+            current = moved;
+        }
+
+        return current;
     }
 
     private static Rectangle CreateRectangle(Size size, int centerX, int centerY)
