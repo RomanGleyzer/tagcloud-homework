@@ -5,94 +5,136 @@ namespace TagsCloudVisualization;
 
 public class CircularCloudLayouterTests
 {
-    private const int Width = 20;
-    private const int Height = 10;
     private const int CreatedRectanglesLimit = 200;
-    private const int RandomMinValue = 10;
-    private const int RandomMaxValue = 100;
+
+    private static readonly Size DefaultRectangleSize = new(30, 20);
+
+    // Минимум половина ограничивающего прямоугольника должна быть занята прямоугольниками
     private const double ExpectedMinDensity = 0.5;
 
+    // Допустимое значение смещения центра облака (не более 20 процентов от размера облака)
+    private const double MaxAllowedCenterOffsetRatio = 0.2;
+    
+    // Облако не должно быть сильно вытянуто по вертикали и горизонтали. Ожидаем круг, а не овал
+    // 0.75 < ожидаемое соотношение сторон < 1.25
+    private const double MinAllowedAspectRatio = 0.75;
+    private const double MaxAllowedAspectRatio = 1.25;
+
     private Point _center;
-    private Size _rectangleSize;
     private CircularCloudLayouter _layouter;
-    private Rectangle[] _rectangles = null!;
 
     [SetUp]
-    public void Setup()
+    public void SetUp()
     {
         _center = Point.Empty;
         _layouter = new CircularCloudLayouter(_center);
-        _rectangleSize = new Size(Width, Height);
     }
 
-    [Test]
-    public void PutNextRectangle_OneRectangle_ShouldBeInCenter()
+    private Rectangle[] CreateRandomRectangles(int count)
     {
-        var rectangle = _layouter.PutNextRectangle(_rectangleSize);
+        var rectangles = new Rectangle[count];
 
+        for (var i = 0; i < count; i++)
+            rectangles[i] = _layouter.PutNextRectangle(DefaultRectangleSize);
+
+        return rectangles;
+    }
+
+    private static Rectangle GetBoundingRectangle(Rectangle[] rectangles)
+    {
+        var left = rectangles.Min(rect => rect.Left);
+        var top = rectangles.Min(rect => rect.Top);
+        var right = rectangles.Max(rect => rect.Right);
+        var bottom = rectangles.Max(rect => rect.Bottom);
+
+        return Rectangle.FromLTRB(left, top, right, bottom);
+    }
+
+    private static Point GetRectangleCenter(Rectangle rectangle)
+    {
         var centerX = rectangle.Left + rectangle.Width / 2;
         var centerY = rectangle.Top + rectangle.Height / 2;
-        var rectCenter = new Point(centerX, centerY);
-
-        rectCenter.Should().Be(_center);
+        return new Point(centerX, centerY);
     }
 
     [Test]
-    public void PutNextRectangle_ManyRectanglesWithDifferentSizes_ShouldNotIntersect()
+    public void PutNextRectangle_FirstRectangle_ShouldBeInCenter()
     {
-        var random = new Random(0);
-        _rectangles = new Rectangle[CreatedRectanglesLimit];
+        var rectangle = _layouter.PutNextRectangle(DefaultRectangleSize);
 
-        for (int i = 0; i < CreatedRectanglesLimit; i++)
-        {
-            var width = random.Next(RandomMinValue, RandomMaxValue);
-            var height = random.Next(RandomMinValue, RandomMaxValue);
-            var size = new Size(width, height);
+        var rectangleCenter = GetRectangleCenter(rectangle);
 
-            var rectangle = _layouter.PutNextRectangle(size);
-            _rectangles[i] = rectangle;
-        }
-
-        var rectanglesCount = _rectangles.Length;
-        for (int i = 0; i < rectanglesCount; i++)
-            for (int j = i + 1; j < rectanglesCount; j++)
-            {
-                var r1 = _rectangles[i];
-                var r2 = _rectangles[j];
-
-                r1.IntersectsWith(r2).Should().BeFalse();
-            }
+        rectangleCenter.Should().Be(_center);
     }
 
-    // Прямоугольники должны лежать как можно плотнее друг к другу
     [Test]
-    public void PutNextRectangle_ManyRectanglesWithDifferentSizes_ShouldBeDense()
+    public void PutNextRectangle_ManyRectangles_DoNotIntersect()
     {
-        var random = new Random(0);
-        _rectangles = new Rectangle[CreatedRectanglesLimit];
+        var rectangles = CreateRandomRectangles(CreatedRectanglesLimit);
 
-        for (int i = 0; i < CreatedRectanglesLimit; i++)
-        {
-            var width = random.Next(RandomMinValue, RandomMaxValue);
-            var height = random.Next(RandomMinValue, RandomMaxValue);
-            var size = new Size(width, height);
+        for (var i = 0; i < rectangles.Length; i++)
+            for (var j = i + 1; j < rectangles.Length; j++)
+                rectangles[i].IntersectsWith(rectangles[j]).Should().BeFalse();
+    }
 
-            var rectangle = _layouter.PutNextRectangle(size);
-            _rectangles[i] = rectangle;
-        }
+    // Облако должно быть достаточно плотным
+    [Test]
+    public void PutNextRectangle_ManyRectangles_ShouldBeDense()
+    {
+        var rectangles = CreateRandomRectangles(CreatedRectanglesLimit);
 
-        var minX = _rectangles.Min(rect => rect.Left);
-        var maxX = _rectangles.Max(rect => rect.Right);
-        var minY = _rectangles.Min(rect => rect.Top);
-        var maxY = _rectangles.Max(rect => rect.Bottom);
+        var totalArea = rectangles.Sum(rect => rect.Width * rect.Height);
 
-        var boundingWidth = maxX - minX;
-        var boundingHeight = maxY - minY;
-        var boudingArea = boundingWidth * boundingHeight;
+        var boundingRectangle = GetBoundingRectangle(rectangles);
+        var boundingArea = boundingRectangle.Width * boundingRectangle.Height;
 
-        var totalArea = _rectangles.Sum(rect => rect.Width * rect.Height);
-        var density = (double)totalArea / boudingArea;
+        var density = (double)totalArea / boundingArea;
 
         density.Should().BeGreaterThan(ExpectedMinDensity);
+    }
+
+    // Облако растет относительно центра
+    [Test]
+    public void PutNextRectangle_ManyRectangles_BoundingRectangleContainsCenter()
+    {
+        var rectangles = CreateRandomRectangles(CreatedRectanglesLimit);
+
+        var boundingRectangle = GetBoundingRectangle(rectangles);
+
+        boundingRectangle.Contains(_center).Should().BeTrue();
+    }
+
+    // Облако из прямоугольников получается в форме круга
+    [Test]
+    public void PutNextRectangle_ManyRectangles_ShapeHasCircularAspectRatio()
+    {
+        var rectangles = CreateRandomRectangles(CreatedRectanglesLimit);
+
+        var boundingRectangle = GetBoundingRectangle(rectangles);
+
+        var aspectRatio = (double)boundingRectangle.Width / boundingRectangle.Height;
+
+        aspectRatio.Should().BeInRange(MinAllowedAspectRatio, MaxAllowedAspectRatio);
+    }
+
+    // Центр облака не должен сильно сместиться
+    [Test]
+    public void PutNextRectangle_ManyRectangles_CenterDoesNotShiftMuch()
+    {
+        var rectangles = CreateRandomRectangles(CreatedRectanglesLimit);
+
+        var boundingRectangle = GetBoundingRectangle(rectangles);
+        var boundingCenter = GetRectangleCenter(boundingRectangle);
+
+        var dx = boundingCenter.X - _center.X;
+        var dy = boundingCenter.Y - _center.Y;
+
+        var distanceFromRequiredCenter = Math.Sqrt(dx * dx + dy * dy);
+        
+        var maxSize = Math.Max(boundingRectangle.Width, boundingRectangle.Height);
+        
+        var centerOffsetRatio = distanceFromRequiredCenter / maxSize;
+
+        centerOffsetRatio.Should().BeLessThanOrEqualTo(MaxAllowedCenterOffsetRatio);
     }
 }
