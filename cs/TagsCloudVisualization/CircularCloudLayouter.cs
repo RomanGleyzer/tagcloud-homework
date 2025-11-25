@@ -4,7 +4,10 @@ namespace TagsCloudVisualization;
 
 public class CircularCloudLayouter(Point center)
 {
+    // Шага 0.2 радиан достаточно для плотного наполнения спирали прямоугольниками
     private const double SpiralStep = 0.2;
+
+    // Радиус спирали будет расти не слишнком медленно и не слишком быстро
     private const int ExpansionRate = 2;
 
     private readonly List<Rectangle> _createdRectangles = [];
