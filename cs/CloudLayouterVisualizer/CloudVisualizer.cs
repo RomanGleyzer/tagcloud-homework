@@ -4,6 +4,14 @@ namespace CloudLayouterVisualizer;
 
 public class CloudVisualizer(List<Rectangle> rectangles, string filePath, double scale, int padding)
 {
+    private static readonly Color BackgroundColor = Color.White;
+    private static readonly Color RectangleFillColor = Color.Orange;
+    private static readonly Color RectangleBorderColor = Color.Black;
+
+    private const float RectangleBorderThickness = 1f;
+    private const string FontFamilyName = "Arial";
+    private const float FontSize = 8f;
+
     public void Visualize()
     {
         var minX = rectangles.Min(rect => rect.Left);
@@ -14,21 +22,17 @@ public class CloudVisualizer(List<Rectangle> rectangles, string filePath, double
         var cloudWidth = maxX - minX;
         var cloudHeight = maxY - minY;
 
-        var scaleWidth = cloudWidth * scale;
-        var scaleHeight = cloudHeight * scale;
-
-        var imageWidth = (int)Math.Ceiling(scaleWidth + 2 * padding);
-        var imageHeight = (int)Math.Ceiling(scaleHeight + 2 * padding);
+        var imageWidth = (int)Math.Ceiling(cloudWidth * scale + 2 * padding);
+        var imageHeight = (int)Math.Ceiling(cloudHeight * scale + 2 * padding);
 
         using var bitmap = new Bitmap(imageWidth, imageHeight);
         using var graphics = Graphics.FromImage(bitmap);
 
-        graphics.Clear(Color.White);
+        graphics.Clear(BackgroundColor);
 
-        using var fillBrush = new SolidBrush(Color.Orange);
-        using var textBrush = new SolidBrush(Color.Black);
-        using var font = new Font("Arial", 8);
-        using var pen = new Pen(Color.Black, 1);
+        using var fillBrush = new SolidBrush(RectangleFillColor);
+        using var font = new Font(FontFamilyName, FontSize);
+        using var pen = new Pen(RectangleBorderColor, RectangleBorderThickness);
 
         foreach (var rect in rectangles)
         {
