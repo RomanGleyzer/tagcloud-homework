@@ -40,6 +40,7 @@ void GenerateCloud(
     double scale,
     int padding)
 {
+    // Закомментировал из-за задачи 3. До него этот проект зависел от TagsCloudVisualization, сейчас наоборот 
     //var layouter = new CircularCloudLayouter(center);
     //var rectangles = new List<Rectangle>();
 
