@@ -14,6 +14,8 @@ public class CircularCloudLayouter(Point center)
 
     private double _currentAngle;
 
+    public List<Rectangle> CreatedRectangles => _createdRectangles;
+
     public Rectangle PutNextRectangle(Size rectangleSize)
     {
         if (_createdRectangles.Count == 0)

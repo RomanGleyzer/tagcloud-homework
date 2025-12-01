@@ -1,6 +1,5 @@
 ﻿using CloudLayouterVisualizer;
 using System.Drawing;
-using TagsCloudVisualization;
 
 const int minWidth = 20;
 const int maxWidth = 60;
@@ -41,16 +40,16 @@ void GenerateCloud(
     double scale,
     int padding)
 {
-    var layouter = new CircularCloudLayouter(center);
-    var rectangles = new List<Rectangle>();
+    //var layouter = new CircularCloudLayouter(center);
+    //var rectangles = new List<Rectangle>();
 
-    for (var i = 0; i < rectanglesCount; i++)
-    {
-        var size = sizeFactory(i);
-        rectangles.Add(layouter.PutNextRectangle(size));
-    }
+    //for (var i = 0; i < rectanglesCount; i++)
+    //{
+    //    var size = sizeFactory(i);
+    //    rectangles.Add(layouter.PutNextRectangle(size));
+    //}
 
-    var filePath = Path.Combine(imagesDir, fileName);
-    var visualizer = new CloudVisualizer(rectangles, filePath, scale, padding);
-    visualizer.Visualize();
+    //var filePath = Path.Combine(imagesDir, fileName);
+    //var visualizer = new CloudVisualizer(rectangles, filePath, scale, padding);
+    //visualizer.Visualize();
 }

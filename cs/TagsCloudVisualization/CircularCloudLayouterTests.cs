@@ -1,4 +1,6 @@
-﻿using FluentAssertions;
+﻿using CloudLayouterVisualizer;
+using FluentAssertions;
+using NUnit.Framework.Interfaces;
 using System.Drawing;
 
 namespace TagsCloudVisualization;
@@ -20,6 +22,13 @@ public class CircularCloudLayouterTests
     private const double MinAllowedAspectRatio = 0.75;
     private const double MaxAllowedAspectRatio = 1.25;
 
+    private const string FailureImagesDirName = "TagCloudFailures";
+    private const string FailureImagesFileExtension = "png";
+    private const string FileNameTimestampFormat = "yyyyMMdd_HHmmssfff";
+    private const string GuidFormat = "N";
+    private const int VisualizationScale = 5;
+    private const int VisualizationPadding = 10;
+
     private Point _center;
     private CircularCloudLayouter _layouter;
 
@@ -28,6 +37,38 @@ public class CircularCloudLayouterTests
     {
         _center = Point.Empty;
         _layouter = new CircularCloudLayouter(_center);
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        if (TestContext.CurrentContext.Result.Outcome.Status != TestStatus.Failed)
+            return;
+
+        try
+        {
+            var ctx = TestContext.CurrentContext;
+
+            if (_layouter.CreatedRectangles.Count == 0)
+            {
+                TestContext.Out.WriteLine("Тест завершился с ошибкой до создания прямоугольников. Визуализация облака не была сохранена");
+                return;
+            }
+
+            var outDir = Path.Combine(ctx.WorkDirectory, FailureImagesDirName);
+            Directory.CreateDirectory(outDir);
+
+            var fileName = $"{DateTime.UtcNow.ToString(FileNameTimestampFormat)}_{Guid.NewGuid().ToString(GuidFormat)}.{FailureImagesFileExtension}";
+            var filePath = Path.Combine(outDir, fileName);
+
+            new CloudVisualizer(_layouter.CreatedRectangles, filePath, VisualizationScale, VisualizationPadding).Visualize();
+
+            TestContext.Out.WriteLine($"Визуализация облака сохранена в файл: {filePath} (тест: {ctx.Test.Name})");
+        }
+        catch (Exception e)
+        {
+            TestContext.Out.WriteLine($"Не удалось сохранить визуализацию облака: {e.Message}");
+        }
     }
 
     private Rectangle[] CreateRandomRectangles(int count)
