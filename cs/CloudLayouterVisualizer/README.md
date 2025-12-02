@@ -1,7 +1,11 @@
-# 50 прямоугольников размером 30x20:
+Облако состоит из 50 прямоугольников одинакового размера 30×20
+Центр - (0, 0). Прямоугольники размещаются на спирали и затем подвигаются к центру для уплотнения, поэтому форма получается компактной и почти круглой
+Масштаб визуализации = 10, а отступ = 5
 
-<img width="2220" height="2190" alt="cloud_50_30x20" src="https://github.com/user-attachments/assets/149dc4a1-f847-4988-9ef5-169d69dd08dc" />
+![](https://github.com/RomanGleyzer/tagcloud-homework/blob/master/cs/CloudLayouterVisualizer/Images/cloud_50_30x20.png)
 
-# 400 прямоугольников с рандомными размерами:
+Облако состоит из 400 прямоугольников случайных размеров центром (0, 0)
+Алгоритм такой же. Ищется позиция на спирали + сдвиг к центру
+Масштаб = 3, отступ = 10
 
-<img width="2648" height="2639" alt="cloud_400_various" src="https://github.com/user-attachments/assets/5bde37be-fa21-4f64-911d-38ab207e295d" />
+![](https://github.com/RomanGleyzer/tagcloud-homework/blob/master/cs/CloudLayouterVisualizer/Images/cloud_400_various.png)
