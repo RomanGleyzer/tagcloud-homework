@@ -110,7 +110,7 @@ public class CircularCloudLayouterTests
             var fileName = $"{DateTime.UtcNow.ToString(FileNameTimestampFormat)}_{Guid.NewGuid().ToString(GuidFormat)}.{FailureImagesFileExtension}";
             var filePath = Path.Combine(outDir, fileName);
 
-            new CloudVisualizer(_layouter.CreatedRectangles, filePath, VisualizationScale, VisualizationPadding).Visualize();
+            new CloudVisualizer([.. _layouter.CreatedRectangles], filePath, VisualizationScale, VisualizationPadding).Visualize();
 
             TestContext.Out.WriteLine($"Визуализация облака сохранена в файл: {filePath} (тест: {ctx.Test.Name})");
         }

@@ -4,20 +4,26 @@ namespace TagsCloudVisualization;
 
 public class CircularCloudLayouter(Point center)
 {
-    // Шага 0.1 радиан достаточно для плотного наполнения спирали прямоугольниками
-    private const double SpiralAngleStep = 0.1;
-
-    // Радиус спирали будет расти не слишнком медленно и не слишком быстро
-    private const double ExpansionRate = 1.0;
+    private const double MinTargetStep = 1.0;
+    private const double TargetStepFactor = 0.5;
+    private const double AngleStepRadiusBias = 1.0;
+    private const double MinAngleStep = 0.05;
+    private const double MaxAngleStep = 0.8;
 
     private readonly List<Rectangle> _createdRectangles = [];
 
     private double _currentAngle;
 
-    public List<Rectangle> CreatedRectangles => _createdRectangles;
+    public IReadOnlyList<Rectangle> CreatedRectangles => _createdRectangles;
 
     public Rectangle PutNextRectangle(Size rectangleSize)
     {
+        if (rectangleSize.Width <= 0)
+            throw new ArgumentException("Ширина должна быть положительным числом", nameof(rectangleSize));
+
+        if (rectangleSize.Height <= 0)
+            throw new ArgumentException("Высота должна быть положительным числом", nameof(rectangleSize));
+
         if (_createdRectangles.Count == 0)
         {
             var rectangle = CreateRectangle(rectangleSize, center.X, center.Y);
@@ -36,7 +42,7 @@ public class CircularCloudLayouter(Point center)
     {
         while (true)
         {
-            var pointOnSpiral = GetNextSpiralPoint();
+            var pointOnSpiral = GetNextSpiralPoint(rectangleSize);
             var candidate = CreateRectangle(rectangleSize, pointOnSpiral.X, pointOnSpiral.Y);
 
             if (!_createdRectangles.Any(candidate.IntersectsWith))
@@ -73,14 +79,21 @@ public class CircularCloudLayouter(Point center)
         return current;
     }
 
-    private Point GetNextSpiralPoint()
+    private Point GetNextSpiralPoint(Size nextRectangleSize)
     {
-        _currentAngle += SpiralAngleStep;
+        var minSide = Math.Min(nextRectangleSize.Width, nextRectangleSize.Height);
 
-        var radius = ExpansionRate * _currentAngle;
+        var targetStep = Math.Max(MinTargetStep, minSide * TargetStepFactor);
 
-        var x = center.X + (int)(radius * Math.Cos(_currentAngle));
-        var y = center.Y + (int)(radius * Math.Sin(_currentAngle));
+        var angleStep = targetStep / (_currentAngle + AngleStepRadiusBias);
+        angleStep = Math.Clamp(angleStep, MinAngleStep, MaxAngleStep);
+
+        _currentAngle += angleStep;
+
+        var radius = _currentAngle;
+
+        var x = center.X + (int)Math.Round(radius * Math.Cos(_currentAngle));
+        var y = center.Y + (int)Math.Round(radius * Math.Sin(_currentAngle));
 
         return new Point(x, y);
     }
